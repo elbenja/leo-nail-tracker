@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Leo’s Nail Tracker 🐾</title>
+<title>Leo's Nail Tracker 🐾</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f0eb; min-height: 100vh; padding: 24px 16px; color: #2d2d2d; }
@@ -50,7 +50,7 @@
 </head>
 <body>
 <header>
-  <h1>🐾 Leo’s Nail Tracker</h1>
+  <h1>🐾 Leo's Nail Tracker</h1>
   <p>Tap any nail to log what was done</p>
 </header>
 <div class="paws-grid" id="pawsGrid"></div>
@@ -77,25 +77,138 @@
   </div>
 </div>
 <script>
-const PAWS=[{id:'fl',label:'Front left',emoji:'🐾',hasDewclaw:true},{id:'fr',label:'Front right',emoji:'🐾',hasDewclaw:true},{id:'bl',label:'Back left',emoji:'🐾',hasDewclaw:false},{id:'br',label:'Back right',emoji:'🐾',hasDewclaw:false}];
-const NAILS=['Nail 1','Nail 2','Nail 3','Nail 4'];
-const ACTIONS=[{id:'clipped',icon:'✅',label:'Clipped',desc:'Full clip'},{id:'ground',icon:'🔧',label:'Ground',desc:'Grinder used'},{id:'tip',icon:'✂️',label:'Tip only',desc:'Just the tip'},{id:'close',icon:'⚠️',label:'Close to quick',desc:'Got close'},{id:'bled',icon:'🩸',label:'Bled',desc:'Quick nicked'}];
-const STORAGE_KEY='leo_nails_v1';
-function loadData(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||{};}catch{return{};}}
-function saveData(d){localStorage.setItem(STORAGE_KEY,JSON.stringify(d));}
-function nailKey(p,n){return p+'__'+n;}
-function daysSince(s){if(!s)return null;return Math.floor((Date.now()-new Date(s).getTime())/86400000);}
-function daysLabel(d){if(d===null)return '';if(d===0)return 'today';if(d===1)return '1 day ago';return d+' days ago';}
-function daysClass(d){if(d===null)return '';if(d<=7)return 'recent';if(d<=21)return 'moderate';return 'old';}
-function iconForEntry(e){if(!e)return '∞';const a=ACTIONS.find(x=>x.id===e.action);return a?a.icon:'∞';}
-function render(){const data=loadData();const grid=document.getElementById('pawsGrid');grid.innerHTML='';PAWS.forEach(paw=>{const card=document.createElement('div');card.className='paw-card';const nailIds=NAILS.map((_,i)=>'nail'+(i+1)).concat(paw.hasDewclaw?['dewclaw']:[]);const nailLabels=NAILS.concat(paw.hasDewclaw?['Dewclaw']:[]);card.innerHTML='<div class="paw-title">'+paw.emoji+' '+paw.label+'</div>';nailIds.forEach((nailId,i)=>{const key=nailKey(paw.id,nailId);const entry=data[key];const days=entry?daysSince(entry.date):null;const row=document.createElement('div');row.className='nail-row';row.innerHTML='<div class="nail-label">'+nailLabels[i]+'</div><div class="nail-icon">'+iconForEntry(entry)+'</div><div class="nail-days '+daysClass(days)+'">'+(days!==null?daysLabel(days):'never done')+'</div><button class="nail-action-btn" onclick="openModal(\"'+paw.id+'\",\"'+nailId+'\",\"'+paw.label+'\",\"'+nailLabels[i]+'\")">Log</button>';card.appendChild(row);});grid.appendChild(card);});}
-let modalState={pawId:null,nailId:null,selected:null};
-function openModal(pawId,nailId,pawLabel,nailLabel){modalState={pawId,nailId,selected:null};document.getElementById('modalTitle').textContent=pawLabel+' — '+nailLabel;const data=loadData();const existing=data[nailKey(pawId,nailId)];document.getElementById('modalSub').textContent=existing?'Last: '+iconForEntry(existing)+' '+(ACTIONS.find(a=>a.id===existing.action)||{label:''}).label+' · '+daysLabel(daysSince(existing.date)):'No history yet';const opts=document.getElementById('actionOptions');opts.innerHTML='';ACTIONS.forEach(action=>{const btn=document.createElement('button');btn.className='action-btn';btn.dataset.action=action.id;btn.innerHTML='<span class="btn-icon">'+action.icon+'</span><div><div class="btn-label">'+action.label+'</div><div class="btn-desc">'+action.desc+'</div></div>';btn.onclick=()=>selectAction(action.id);opts.appendChild(btn);});document.getElementById('btnSave').disabled=true;document.getElementById('modalOverlay').classList.add('open');}
-function selectAction(id){modalState.selected=id;document.querySelectorAll('.action-btn').forEach(b=>b.classList.toggle('selected',b.dataset.action===id));document.getElementById('btnSave').disabled=false;}
-function closeModal(){document.getElementById('modalOverlay').classList.remove('open');}
-function saveAction(){if(!modalState.selected)return;const data=loadData();data[nailKey(modalState.pawId,modalState.nailId)]={action:modalState.selected,date:new Date().toISOString()};saveData(data);closeModal();render();}
-document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
-render();setInterval(render,60000);
+var PAWS = [
+  { id: 'fl', label: 'Front left',  emoji: '🐾', hasDewclaw: true },
+  { id: 'fr', label: 'Front right', emoji: '🐾', hasDewclaw: true },
+  { id: 'bl', label: 'Back left',   emoji: '🐾', hasDewclaw: false },
+  { id: 'br', label: 'Back right',  emoji: '🐾', hasDewclaw: false }
+];
+var NAILS = ['Nail 1', 'Nail 2', 'Nail 3', 'Nail 4'];
+var ACTIONS = [
+  { id: 'clipped', icon: '✅', label: 'Clipped',        desc: 'Full clip' },
+  { id: 'ground',  icon: '🔧', label: 'Ground',         desc: 'Grinder used' },
+  { id: 'tip',     icon: '✂️',  label: 'Tip only',       desc: 'Just the tip' },
+  { id: 'close',   icon: '⚠️', label: 'Close to quick', desc: 'Got close' },
+  { id: 'bled',    icon: '🩸', label: 'Bled',           desc: 'Quick nicked' }
+];
+var STORAGE_KEY = 'leo_nails_v1';
+
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e) { return {}; }
+}
+function saveData(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+function nailKey(p, n) { return p + '__' + n; }
+function daysSince(s) {
+  if (!s) return null;
+  return Math.floor((Date.now() - new Date(s).getTime()) / 86400000);
+}
+function daysLabel(d) {
+  if (d === null) return '';
+  if (d === 0) return 'today';
+  if (d === 1) return '1 day ago';
+  return d + ' days ago';
+}
+function daysClass(d) {
+  if (d === null) return '';
+  if (d <= 7) return 'recent';
+  if (d <= 21) return 'moderate';
+  return 'old';
+}
+function iconForEntry(e) {
+  if (!e) return '∞';
+  var a = ACTIONS.filter(function(x){ return x.id === e.action; })[0];
+  return a ? a.icon : '∞';
+}
+
+function render() {
+  var data = loadData();
+  var grid = document.getElementById('pawsGrid');
+  grid.innerHTML = '';
+  PAWS.forEach(function(paw) {
+    var card = document.createElement('div');
+    card.className = 'paw-card';
+    var nailIds = NAILS.map(function(_, i){ return 'nail' + (i + 1); });
+    var nailLabels = NAILS.slice();
+    if (paw.hasDewclaw) { nailIds.push('dewclaw'); nailLabels.push('Dewclaw'); }
+    card.innerHTML = '<div class="paw-title">' + paw.emoji + ' ' + paw.label + '</div>';
+    nailIds.forEach(function(nailId, i) {
+      var key = nailKey(paw.id, nailId);
+      var entry = data[key];
+      var days = entry ? daysSince(entry.date) : null;
+      var row = document.createElement('div');
+      row.className = 'nail-row';
+      var btn = document.createElement('button');
+      btn.className = 'nail-action-btn';
+      btn.textContent = 'Log';
+      btn.addEventListener('click', (function(pid, nid, pl, nl) {
+        return function() { openModal(pid, nid, pl, nl); };
+      })(paw.id, nailId, paw.label, nailLabels[i]));
+      row.innerHTML =
+        '<div class="nail-label">' + nailLabels[i] + '</div>' +
+        '<div class="nail-icon">' + iconForEntry(entry) + '</div>' +
+        '<div class="nail-days ' + daysClass(days) + '">' + (days !== null ? daysLabel(days) : 'never done') + '</div>';
+      row.appendChild(btn);
+      card.appendChild(row);
+    });
+    grid.appendChild(card);
+  });
+}
+
+var modalState = { pawId: null, nailId: null, selected: null };
+
+function openModal(pawId, nailId, pawLabel, nailLabel) {
+  modalState = { pawId: pawId, nailId: nailId, selected: null };
+  document.getElementById('modalTitle').textContent = pawLabel + ' — ' + nailLabel;
+  var data = loadData();
+  var existing = data[nailKey(pawId, nailId)];
+  var action = existing ? ACTIONS.filter(function(a){ return a.id === existing.action; })[0] : null;
+  document.getElementById('modalSub').textContent = existing
+    ? 'Last: ' + iconForEntry(existing) + ' ' + (action ? action.label : '') + ' · ' + daysLabel(daysSince(existing.date))
+    : 'No history yet';
+  var opts = document.getElementById('actionOptions');
+  opts.innerHTML = '';
+  ACTIONS.forEach(function(action) {
+    var btn = document.createElement('button');
+    btn.className = 'action-btn';
+    btn.dataset.action = action.id;
+    btn.innerHTML = '<span class="btn-icon">' + action.icon + '</span><div><div class="btn-label">' + action.label + '</div><div class="btn-desc">' + action.desc + '</div></div>';
+    btn.addEventListener('click', function() { selectAction(action.id); });
+    opts.appendChild(btn);
+  });
+  document.getElementById('btnSave').disabled = true;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function selectAction(id) {
+  modalState.selected = id;
+  document.querySelectorAll('.action-btn').forEach(function(b) {
+    b.classList.toggle('selected', b.dataset.action === id);
+  });
+  document.getElementById('btnSave').disabled = false;
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+function saveAction() {
+  if (!modalState.selected) return;
+  var data = loadData();
+  data[nailKey(modalState.pawId, modalState.nailId)] = {
+    action: modalState.selected,
+    date: new Date().toISOString()
+  };
+  saveData(data);
+  closeModal();
+  render();
+}
+
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+render();
+setInterval(render, 60000);
 </script>
 </body>
 </html>
