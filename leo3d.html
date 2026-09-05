@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leo 3D — paw picker</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f0eb;
+      min-height: 100vh;
+      color: #2d2d2d;
+      overscroll-behavior: none;
+    }
+
+    /* Without this a phone can claim a touch on the canvas as a pan/zoom
+       gesture and cancel the pointer stream before the tap registers. */
+    canvas {
+      touch-action: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/leo3d.jsx"></script>
+</body>
+
+</html>
