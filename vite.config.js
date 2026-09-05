@@ -6,6 +6,10 @@ import { resolve } from 'node:path'
 // copied through; leo3d.html is the React/r3f page the 3D paw picker is built in.
 export default defineConfig({
   plugins: [react()],
+  // One copy of three, or r3f/drei and app code get separate instances.
+  resolve: { dedupe: ['three', 'react', 'react-dom'] },
+  // Honour PORT so the dev server can move off 5173 when it is taken.
+  server: { port: Number(process.env.PORT) || 5173 },
   build: {
     rollupOptions: {
       input: {
