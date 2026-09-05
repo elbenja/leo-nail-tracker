@@ -3,12 +3,15 @@ import { Canvas } from '@react-three/fiber'
 import { Bounds, useGLTF } from '@react-three/drei'
 import { PAWS } from './paws.js'
 
-// leo.glb is Y-up, 1.0 units tall, origin centered between the feet, and faces
+// leo.glb is Y-up, 0.72 units tall, origin centered between the feet, and faces
 // +z (the front paws sit at positive z). See docs/leo-3d-plan.md.
 const MODEL_URL = '/leo.glb'
 
-// The camera is fixed — no orbit. This position only sets the viewing *angle*:
-// a three-quarter view from the front right, a little above Leo. <Bounds fit>
+// The geometry is meshopt-compressed; drei wires that decoder up by default, so
+// plain useGLTF is all this needs.
+
+// The camera is fixed — no orbit. This position only sets the viewing *angle*: a
+// three-quarter view from Leo's front left, a little above him. <Bounds fit>
 // picks the distance so he fills the frame at any aspect ratio, which matters
 // because a phone in portrait is far narrower than a desktop window.
 const CAMERA = { position: [1.85, 1.05, 2.5], fov: 30 }
