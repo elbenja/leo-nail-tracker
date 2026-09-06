@@ -152,3 +152,36 @@ With `observe` on, `Bounds` re-runs its own fit immediately after a manual
 distance 0.472 on the paw, back to 2.245 on the dog 500ms later, camera unchanged. Dropping
 `observe` does not fix it and breaks initial framing (the one-shot fit can run before the GLB
 loads). Don't reintroduce it; extend `CameraRig` instead.
+
+## Deferred until after the design phase
+
+Not bugs, and deliberately not done now — we are still in the design phase. Revisit once the
+design is finished.
+
+### Cache headers on Vercel
+
+Deployed at `https://leo-nail-tracker.vercel.app` (`/` is the tracker, `/leo3d.html` the
+picker), auto-deploying from `main`. Verified live on 2026-09-06: model decodes, paw ids
+correct over HTTPS, brotli active on both the bundle and the `.glb`, `leo.glb` served as
+`model/gltf-binary` at exactly 377,492 bytes.
+
+**The one thing left on the table.** With no `vercel.json`, Vercel's default applies to
+everything:
+
+```
+cache-control: public, max-age=0, must-revalidate
+```
+
+That is wrong for `/assets/*`, which vite gives **content-hashed** filenames
+(`leo3d-DT6GAvAH.js`) — a changed file gets a new name, so those can be cached forever. As it
+stands every repeat visit spends a revalidation round-trip on a 1.16 MB bundle and a 377 KB
+model before rendering. The bytes aren't resent (304s), but the latency is real on mobile.
+
+Fix once the design phase is over — a `vercel.json` with:
+
+- `/assets/*` → `max-age=31536000, immutable` (safe: hashed filenames)
+- `/leo.glb` → a short explicit `max-age`. **Not** immutable: this filename is *not* hashed and
+  the model has already been swapped once, so a long cache would strand people on an old dog.
+
+Deferring it costs nothing now; the whole point is that it becomes worth doing once the assets
+stop changing.
