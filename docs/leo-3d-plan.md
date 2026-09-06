@@ -109,12 +109,16 @@ Raycast against the hitbox list only — the dog mesh itself should not be inter
 
 ## Build order
 
-1. r3f canvas + `useGLTF` load of the decimated model, orbit-locked camera (no free orbit —
-   pick one or two flattering angles).
-2. Four hitboxes with a debug material. Confirm each fires with the correct id, on desktop
-   click and mobile tap.
-3. Make hitboxes transparent. Add hover state — cursor change plus a subtle highlight on the
-   whole dog (not on the paw; the paw isn't separable).
+1. ~~r3f canvas + `useGLTF` load of the decimated model~~ — done. **The camera is no longer
+   orbit-locked.** Free orbit and scroll zoom were added on 2026-09-05 by request, reversing
+   that decision. `CameraRig` in `src/LeoScene.jsx` owns framing: it derives the fit distance
+   from a bounding sphere and the tighter of the two fields of view, so it frames correctly in
+   portrait and landscape. drei's `<Bounds>` cannot be used for this — see below.
+2. ~~Four hitboxes with a debug material~~ — done. All four return the correct id.
+3. ~~Make hitboxes transparent~~ — done, using a fully transparent material (`visible={false}`
+   would drop them from raycasting), plus a pointer cursor on hover. **The "subtle highlight on
+   the whole dog" was not built** — selecting a paw flies the camera in to it instead, and
+   clicking away pulls back out, which may make the highlight redundant. Still open.
 4. Wire selection to the 2D card overlay. Selected paw id is the only thing crossing the
    boundary.
 5. Idle motion: slow breathing scale on Y, damped tilt toward cursor, small bounce on select.
@@ -124,13 +128,27 @@ Raycast against the hitbox list only — the dog mesh itself should not be inter
 
 - Tail wag, ear flop, or any skeletal animation
 - Clicking individual nails in 3D
-- Free camera orbit
+- ~~Free camera orbit~~ — reversed on 2026-09-05; orbit and zoom shipped
 - Ears / teeth tracking (later — each becomes another hitbox on the same model, same pattern)
 
 ## Verification
 
-- Each of the four hitboxes returns its correct id, on desktop and on a real phone
-- Tap targets comfortable one-handed on a phone — enlarge hitboxes if not
-- Final GLB under 400 KB
-- Scene holds 60fps on mid-range mobile
-- Nail data flows through React state only; three.js never imports it
+- [x] Each of the four hitboxes returns its correct id — desktop click, and tap under touch
+      emulation at 375x812
+- [x] Framing holds in portrait and landscape
+- [x] Final GLB under 400 KB (378 KB)
+- [ ] **Drag-rotate and pinch-zoom on real touch hardware.** Not verified. Synthetic pointer
+      events drive r3f's tap path but do not drive OrbitControls' gestures, so this cannot be
+      checked from a desktop browser — it needs a phone. `npm run dev:host`, then open
+      `http://<lan-ip>:5173/leo3d.html`. Pinch is the one most likely to fight tap-to-select.
+- [ ] Tap targets comfortable one-handed on a phone — enlarge hitboxes if not
+- [ ] Scene holds 60fps on mid-range mobile
+- [ ] Nail data flows through React state only; three.js never imports it (step 4)
+
+### Why not drei `<Bounds>`
+
+With `observe` on, `Bounds` re-runs its own fit immediately after a manual
+`refresh(pawMesh).fit()` and reverts to the whole dog before the camera moves — measured: fit
+distance 0.472 on the paw, back to 2.245 on the dog 500ms later, camera unchanged. Dropping
+`observe` does not fix it and breaks initial framing (the one-shot fit can run before the GLB
+loads). Don't reintroduce it; extend `CameraRig` instead.
