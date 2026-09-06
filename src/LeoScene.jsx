@@ -2,6 +2,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, useGLTF } from '@react-three/drei'
 import { Box3, Sphere, Vector3 } from 'three'
+import Atmosphere from './Atmosphere.jsx'
 import { PAWS } from './paws.js'
 
 // leo.glb is Y-up, 0.72 units tall, origin centered between the feet, and faces
@@ -41,6 +42,25 @@ const pawRadius = (paw) => 0.5 * Math.hypot(...paw.size)
 
 function Leo({ onMeasure }) {
   const { scene } = useGLTF(MODEL_URL)
+
+  // useGLTF caches the scene, so clone the material before touching it or every
+  // future mount inherits the edit.
+  useEffect(() => {
+    scene.traverse((object) => {
+      if (!object.isMesh || object.userData.leoStyled) return
+      object.userData.leoStyled = true
+      object.castShadow = true
+      object.receiveShadow = true
+
+      const material = object.material.clone()
+      // The texture is baked a strong orange. Multiplying past 1 lifts it toward
+      // the pale creamy look without repainting the texture.
+      material.color.setRGB(1.55, 1.35, 1.12)
+      material.roughness = 0.85
+      material.metalness = 0
+      object.material = material
+    })
+  }, [scene])
 
   useEffect(() => {
     const sphere = new Box3().setFromObject(scene).getBoundingSphere(new Sphere())
@@ -151,6 +171,8 @@ export default function LeoScene() {
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
       <Canvas
+        shadows
+        gl={{ toneMappingExposure: 1.05 }}
         style={{ width: '100%', height: '100%' }}
         camera={CAMERA}
         onPointerDown={(e) => {
@@ -163,9 +185,7 @@ export default function LeoScene() {
           setSelected(null)
         }}
       >
-        <hemisphereLight args={['#fff6ea', '#7d6b55', 1.1]} />
-        <directionalLight position={[2.5, 4, 3]} intensity={2.2} />
-        <directionalLight position={[-3, 1.5, -2]} intensity={0.5} />
+        <Atmosphere />
 
         <OrbitControls
           makeDefault
