@@ -12,6 +12,15 @@ export default defineConfig({
   server: { port: Number(process.env.PORT) || 5173 },
   build: {
     rollupOptions: {
+      output: {
+        // Split the vendor code out so an app change does not force a
+        // re-download of three, which is the bulk of the payload.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+          if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'react'
+          return 'three'
+        },
+      },
       input: {
         main: resolve(import.meta.dirname, 'index.html'),
         leo3d: resolve(import.meta.dirname, 'leo3d.html'),

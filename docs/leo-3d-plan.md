@@ -145,6 +145,37 @@ Raycast against the hitbox list only — the dog mesh itself should not be inter
 - [ ] Scene holds 60fps on mid-range mobile
 - [ ] Nail data flows through React state only; three.js never imports it (step 4)
 
+### Known bug: paws are selectable through Leo's body
+
+**Reproduced 2026-09-06.** Orbit to a head-on view and click Leo's chest: a hidden *back* paw
+gets selected (seen as both `BR` and `BL`). r3f only dispatches to objects carrying handlers,
+and Leo's mesh has none, so it never counts as a hit and cannot occlude the hitboxes behind it.
+Free orbit makes this easy to hit.
+
+Two fixes were tried and **both failed**:
+
+1. A manual `Raycaster` against Leo's mesh in the click handler, rejecting the paw when the body
+   is nearer.
+2. Giving the `<primitive>` its own `onClick`/`onPointerOver` that call `stopPropagation`, so
+   r3f's own nearest-first dispatch blocks the paw.
+
+Both fail for the same reason: **raycasts against Leo's mesh return zero hits**, always — even
+for a ray that visibly passes through him and selects a paw beyond. The mesh looks raycastable
+(one indexed `Mesh`, `visible`, `FrontSide`, layer 0, 21,847 verts, bounding sphere 1.29). The
+untested suspect is its geometry format: positions are **interleaved, normalized `Int16Array`**
+(`KHR_mesh_quantization` + `EXT_meshopt_compression`). Start there — try
+`computeBoundingSphere()` after load, or a de-quantized/uncompressed copy of the GLB, and check
+whether a plain `Raycaster` can hit it at all before rebuilding either fix.
+
+### Bundle size: three is the cost, not drei
+
+Measured 2026-09-06 with per-package chunks: **~321 KB gzip total** — three ~259 KB, React ~60 KB,
+app code ~2 KB. Replacing drei (only `OrbitControls` + `useGLTF` are used) with three's own
+`OrbitControls` and `GLTFLoader` + `MeshoptDecoder` changed the total by **+0.3 KB** — no saving
+at all — so that refactor was reverted. Don't retry it. three itself is the floor here; the
+remaining levers are caching (vendor chunks are now split) and lazy-loading, not swapping
+libraries.
+
 ### Why not drei `<Bounds>`
 
 With `observe` on, `Bounds` re-runs its own fit immediately after a manual
