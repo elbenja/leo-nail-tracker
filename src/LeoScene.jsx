@@ -53,9 +53,10 @@ function Leo({ onMeasure }) {
       object.receiveShadow = true
 
       const material = object.material.clone()
-      // The texture is baked a strong orange. Multiplying past 1 lifts it toward
-      // the pale creamy look without repainting the texture.
-      material.color.setRGB(1.55, 1.35, 1.12)
+      // The texture is baked a strong orange. This tint lifts it a little and
+      // pulls the red down, landing on a warm tan — going much brighter washes
+      // him out against the cream backdrop.
+      material.color.setRGB(1.05, 0.88, 0.68)
       material.roughness = 0.85
       material.metalness = 0
       object.material = material
@@ -172,7 +173,7 @@ export default function LeoScene() {
     <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
       <Canvas
         shadows
-        gl={{ toneMappingExposure: 1.05 }}
+        gl={{ toneMappingExposure: 0.95 }}
         style={{ width: '100%', height: '100%' }}
         camera={CAMERA}
         onPointerDown={(e) => {
