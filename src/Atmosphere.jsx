@@ -102,6 +102,9 @@ export default function Atmosphere() {
         intensity={155}
         color="#fff4e4"
         castShadow
+        // Full-strength shadow reads too heavy against a floor this pale; this
+        // keeps the contact without the smear going muddy.
+        shadow-intensity={0.45}
         shadow-mapSize={[2048, 2048]}
         shadow-bias={-0.0006}
         shadow-normalBias={0.02}
